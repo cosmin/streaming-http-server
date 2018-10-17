@@ -95,7 +95,7 @@ func main() {
 
 	directory = *flag.String("d", "/tmp", "a string")
 	port := flag.Int("p", 8080, "an int")
-
+	flag.Parse()
 
 	m := http.NewServeMux()
 	s := http.Server{

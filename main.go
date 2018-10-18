@@ -60,30 +60,33 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 		isOpenPath := fileName + "_is_open"
 
-		fmt.Printf("%s is being read\n", fileName)
-		f, err := os.Open(fileName)
-		check(err)
-		b1 := make([]byte, ChunkSize)
-		done := false
-		for done != true {
-			hasClosed := false
-			if _, err := os.Stat(isOpenPath); os.IsNotExist(err) {
-				hasClosed = true
-			}
-			readLength, err := f.Read(b1)
-			if err != io.EOF {
-				check(err)
-			}
-			if readLength != ChunkSize && hasClosed {
-				done = true
-			}
-			if readLength > 0 {
-				_, err = w.Write(b1[0:readLength])
-				check(err)
-				if f, ok := w.(http.Flusher); ok {
-					f.Flush()
-				} else {
-					log.Println("Damn, no flush");
+		if _, err := os.Stat(isOpenPath); os.IsNotExist(err) {
+			http.ServeFile(w, r, fileName)
+		} else {
+			f, err := os.Open(fileName)
+			check(err)
+			b1 := make([]byte, ChunkSize)
+			done := false
+			for done != true {
+				hasClosed := false
+				if _, err := os.Stat(isOpenPath); os.IsNotExist(err) {
+					hasClosed = true
+				}
+				readLength, err := f.Read(b1)
+				if err != io.EOF {
+					check(err)
+				}
+				if readLength != ChunkSize && hasClosed {
+					done = true
+				}
+				if readLength > 0 {
+					_, err = w.Write(b1[0:readLength])
+					check(err)
+					if f, ok := w.(http.Flusher); ok {
+						f.Flush()
+					} else {
+						log.Println("Damn, no flush")
+					}
 				}
 			}
 		}

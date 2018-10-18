@@ -12,8 +12,10 @@ import (
 )
 
 var directory = "/tmp/default"
+var CORS = false
 
 const ChunkSize = 65536
+
 
 func check(e error) {
 	if e != nil {
@@ -23,9 +25,11 @@ func check(e error) {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	fileName := path.Join(directory, path.Base(r.URL.Path))
-	(w).Header().Set("Access-Control-Allow-Origin", "*")
-	(w).Header().Set("Access-Control-Allow-Methods", "GET, PUT")
-	(w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	if CORS {
+		(w).Header().Set("Access-Control-Allow-Origin", "*")
+		(w).Header().Set("Access-Control-Allow-Methods", "GET, PUT")
+		(w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	}
 
 	switch r.Method {
 
@@ -93,9 +97,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
-	directory = *flag.String("d", "/tmp", "a string")
-	port := flag.Int("p", 8080, "an int")
+	directory = *flag.String("d", "/tmp", "The local path to and from which files will be served")
+	port := flag.Int("p", 8080, "The port number of the server")
+	CORSptr := flag.Bool("CORS", false, "add CORS headers to allow full local file access")
 	flag.Parse()
+	CORS = *CORSptr
 
 	m := http.NewServeMux()
 	s := http.Server{
@@ -106,6 +112,9 @@ func main() {
 		//WriteTimeout:      60 * time.Second,
 		ErrorLog:          nil,
 	}
+
+	fmt.Printf("Http server started, listening on port %d\n", *port)
+	fmt.Printf("Serving files out of %s\n", directory)
 
 	m.HandleFunc("/", handler)
 	log.Fatal(s.ListenAndServe())
